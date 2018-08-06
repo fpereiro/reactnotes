@@ -576,8 +576,6 @@ ReactDOM.render (<Form />, document.getElementById ('root'));
             <select multiple={true} value={this.state.value} onChange={this.change}>
 ```
 
-- I
-
 - **TODO: The above example does not work for me when I try to select an element**.
 
 - `<input>` elements for handling files cannot be controlled by React.
@@ -724,7 +722,7 @@ function WelcomeDialog () {
 ReactDOM.render (<WelcomeDialog />, document.getElementById ('root'));
 ```
 
-If you need to pass more than one set of children, you need to make up your own convention:
+- If you need to pass more than one set of children, you need to make up your own convention:
 
 ```javascript
 function Container (props) {
@@ -809,7 +807,7 @@ const reducer = function (state, action) {
 - Example Redux action:
 
 ```javascript
-{type: 'INCREMENT', payload: amount}
+{type: 'increment', payload: amount}
 ```
 
 A Redux action needs a `type` (is it always a string?) and can have an optional payload.
