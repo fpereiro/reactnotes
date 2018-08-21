@@ -931,7 +931,7 @@ ReactDOM.render(<Provider store={store}><AppContainer /></Provider>, document.ge
 
 - Let's now modify the reducer & the component to pass payloads to the action.
 
-```
+```javascript
 const reducer = function (state, action) {
    if (action.type === 'increment') return {counter: state.counter + (action.payload || 1)};
    return state || {counter: 0};
@@ -1098,7 +1098,7 @@ Quite abstruse. We can see though that `createSelector` here takes two arguments
 
 Let's now use this in the context of an application to list goods and their prices without tax and with tax:
 
-```
+```javascript
 const reducer = function (state, action) {
    if (action.type === 'setTax') return {goods: state.goods, tax: action.payload};
    return state || {
