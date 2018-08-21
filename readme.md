@@ -989,3 +989,198 @@ export class App extends React.Component {
 ```
 
 - Notice that we define `this.increment` to call `this.props.increment` and pass `this.state.by` to it (after passing it to a number. We also need to initialize the state of the component to hold a component for `by`, and also create a method to update `by`. Finally, we add an `<input>` to control `this.state.by`.
+
+## [Lifecycle hooks](https://reactjs.org/docs/react-component.html)
+
+- "React lets you define components as classes or functions. Components defined as classes currently provide more features which are described in detail on this page."
+
+- "The only method you must define in a React.Component subclass is called render(). All the other methods described on this page are optional."
+
+- "Each component has several “lifecycle methods” that you can override to run code at particular times in the process."
+
+- **Note**: in this section, we'll use the terms *lifecycle hook* and *method* interchangeably.
+
+- There are three main "moments" of a component: *mounting*, *updating* and *unmounting*. The first one is when the component is placed; the second one, when it's redrawn; and the final one is when it's removed.
+
+- The methods for each of the moments:
+   1. **Mounting**: `constructor ()`, `getDerivedStateFromProps ()`, `render ()`, `componentDidMount ()`.
+   2. **Updating**: `getDerivedStateFromProps ()`, `render ()`, `getSnapshotBeforeUpdate ()`, `componentDidUpdate ()`.
+   3. **Unmounting**: `componentWillUnmount ()`.
+
+- A few things to notice:
+   - `constructor ()` only applies to mounting. `getSnapshotBeforeUpdate ()` only applies to updating.
+   - Two methods are shared by mounting & updating: `getDerivedStateFromProps ()` and `render ()`. These are the methods used to draw/redraw the view and it makes sense that they should be shared by mounting & updating.
+   - There's a final method corresponding to each of the moments (it's the only one in the case of unmounting): `componentDidMount ()`, `componentDidUpdate ()` and `componentWillUnmount ()`. Notice how the last one takes place **before** the actual unmounting.
+
+- **Note**: deprectaed lifecycle hooks are not mentioned here, since we're trying to adhere to mid-2018 React best practices.
+
+### Frequently used methods
+
+- We've seen already the methods `constructor ()` and `render ()` in most of the examples above.
+
+- "componentDidMount () is invoked immediately after a component is mounted (inserted into the tree). Initialization that requires DOM nodes should go here. If you need to load data from a remote endpoint, this is a good place to instantiate the network request. This method is a good place to set up any subscriptions. If you do that, don’t forget to unsubscribe in componentWillUnmount ()." This component seems to be the main "initialization" component. Regarding calling `setState` from within this method: "You may call setState () immediately in componentDidMount (). It will trigger an extra rendering, but it will happen before the browser updates the screen. (...) Use this pattern with caution because it often causes performance issues. In most cases, you should be able to assign the initial state in the constructor () instead." It is useful for "for cases like modals and tooltips when you need to measure a DOM node before rendering something that depends on its size or position."
+
+- "componentDidUpdate (prevProps, prevState, snapshot)" is invoked immediately after updating occurs. This method is not called for the initial render. Use this as an opportunity to operate on the DOM when the component has been updated. This is also a good place to do network requests as long as you compare the current props to previous props (e.g. a network request may not be necessary if the props have not changed). You may call setState() immediately in componentDidUpdate() but note that it must be wrapped in a condition (...) or you’ll cause an infinite loop. It would also cause an extra re-rendering which, while not visible to the user, can affect the component performance." The `snapshot` argument is the optional value returned by the optional call to `getSnapshotBeforeUpdate` (see method description below).
+
+- "componentWillUnmount () is invoked immediately before a component is unmounted and destroyed. Perform any necessary cleanup in this method, such as invalidating timers, canceling network requests, or cleaning up any subscriptions that were created in componentDidMount (). You should not call setState () in componentWillUnmount () because the component will never be re-rendered. Once a component instance is unmounted, it will never be mounted again."
+
+### Rarely used methods
+
+- "`getDerivedStateFromProps` is invoked right before calling the render method, both on the initial mount and on subsequent updates. It should return an object to update the state, or null to update nothing." It receives two arguments: `(props, state)`, and "it should return an object to update the state, or null to update nothing." According to [this official source](https://reactjs.org/blog/2018/06/07/you-probably-dont-need-derived-state.html#when-to-use-derived-state), "(it) exists for only one purpose. It enables a component to update its internal state as the result of changes in props. (...) as a general rule, derived state should be used sparingly." *Derived state*, I believe, means state that is calculated as a consequence of the `props` passed to a component. The "rare use cases for this method" are enumerated but not defined: 1) "For example, it might be handy for implementing a <Transition> component that compares its previous and next children to decide which of them to animate in and out." and 2) "loading external data specified by a source prop." Overall, it seems like a method that can be avoided.
+
+- "`getSnapshotBeforeUpdate (prevProps, prevState)` is invoked right before the most recently rendered output is committed to e.g. the DOM. It enables your component to capture some information from the DOM (e.g. scroll position) before it is potentially changed. Any value returned by this lifecycle will be passed as a parameter to componentDidUpdate (). This use case is not common, but it may occur in UIs like a chat thread that need to handle scroll position in a special way."
+
+### Non-lifecycle methods that you can invoke from the lifecycle methods above
+
+- `setState (updater[, callback])`: "This is the primary method you use to update the user interface in response to event handlers and server responses. Think of setState () as a request rather than an immediate command to update the component. React does not guarantee that the state changes are applied immediately." The optional `callback` will fire after `setState` is processed.
+
+- `component.forceUpdate (callback)`: "Calling forceUpdate () will cause render () to be called on the component, skipping shouldComponentUpdate (). This will trigger the normal lifecycle methods for child components, including the shouldComponentUpdate () method of each child. React will still only update the DOM if the markup changes. Normally you should try to avoid all uses of forceUpdate () and only read from this.props and this.state in render ()."
+
+## Reselect
+
+To explain the reselect library, we'll extract info from a few articles. Before doing that, we need to add reselect to our application. We add a seventh line to our header file:
+
+```javascript
+import { createSelector } from 'reselect'
+```
+
+Our entire header is now composed of seven lines:
+
+```javascript
+import React from 'react';
+import ReactDOM from 'react-dom';
+import './index.css';
+import { createStore } from 'redux';
+import { Provider } from 'react-redux';
+import { connect } from 'react-redux';
+import { createSelector } from 'reselect';
+```
+
+Notice that we'll only need the `createSelector` function from reselect, nothing else.
+
+A selector is a function that takes the entire `state` and returns a part of the state. For example:
+
+```javascript
+var selector1 = function (state) {
+   return state.items;
+}
+```
+
+Normally, these selector functions are contained within `mapStateToProps`, which is the function that takes the Redux state and outputs the `props` needed by our components.
+
+### [Usage of Reselect in a React-Redux Application](https://dashbouquet.com/blog/frontend-development/usage-of-reselect-in-a-react-redux-application)
+
+- Reselect is a library that makes it easier/better to **get values from the store** in a React-Redux application.
+
+- Its salient aspect is its memoization capability (memoization is saving the value of a function call and reusing it when the inputs to the function don't change). Reselect provides both performance and usability improvements. "In two words, when you use the createSelector () function, it memoizes an output of every input selector and recalculates the resulting value only if any of the input selectors changes its output."
+
+- When using React-Redux, through the `connect` function, you get parts of Redux's state into your components (through the `mapStateToProps` function). After calling `mapStateToProps`, "the new props are shallow compared to the old ones and if they differ, components get re-rendered."
+
+- Memoization is useful for two things:
+   1. Performance improvements: when a small part of the state changes, other parts of the state might be recalculated unnecessarily. Reselect prevents this.
+   2. Circular behavior: if part the state is modified as a result on a change of another part of the state, the application can go into an infinite loop of recalculating the state and re-rendering the components depending on it. Memoization prevents this.
+
+However, circular behavior (to the best of my knowledge) only occurs when using the `componentWillReceiveProps` lifecycle hook, which is deprecated. So this leaves us only with 1), that is, memoization for performance improvements.
+
+### [React, Reselect & Redux](https://medium.com/@parkerdan/react-reselect-and-redux-b34017f8194c)
+
+Going back to our example above with `selector1`, here's how we can create a Reselect selector with it.
+
+```javascript
+var selector1 = function (state) {
+   return state.items;
+}
+
+var reselector1 = createSelector ([selector1], (x) => x);
+```
+
+Quite abstruse. We can see though that `createSelector` here takes two arguments: an array with selector functions as first argument, and an anonymous function as second argument. This anonymous function receives one argument and returns it without doing anything else.
+
+Let's now use this in the context of an application to list goods and their prices without tax and with tax:
+
+```
+const reducer = function (state, action) {
+   if (action.type === 'setTax') return {goods: state.goods, tax: action.payload};
+   return state || {
+      goods: [
+         {name: 'tomatoes',  price: 1},
+         {name: 'potatoes',  price: 3},
+         {name: 'cucumbers', price: 2},
+         {name: 'salad',     price: 4},
+      ],
+      tax: 0.20,
+   }
+}
+
+var getGoods = createSelector ([function (state) {
+   return state.goods;
+}], (x) => x);
+
+const mapStateToProps = function (state) {
+   return {
+      goods:  getGoods (state),
+      tax:    state.tax,
+   };
+}
+
+const mapDispatchToProps = function (dispatch) {
+   return {
+      setTax: function (payload) {
+         dispatch ({type: 'setTax', payload: payload});
+      }
+   }
+}
+
+export class App extends React.Component {
+   constructor (props) {
+      super (props);
+      this.setTax = (ev) => {
+         var newTax = parseFloat (ev.target.value, 10);
+         if (isNaN (newTax)) newTax = 0;
+         this.props.setTax (newTax);
+      }
+   }
+   render () {
+      return (
+         <div>
+            <ul>
+               {this.props.goods.map ((product, index) => {
+                  return <li key={index}>{product.name} - {product.price} - ({product.price * (1 + this.props.tax)})</li>
+               })}
+               <input value={this.props.tax} onChange={this.setTax} />
+            </ul>
+         </div>
+      );
+   }
+}
+
+const store = createStore (reducer);
+const AppContainer = connect (mapStateToProps, mapDispatchToProps) (App);
+ReactDOM.render(<Provider store={store}><AppContainer /></Provider>, document.getElementById ('root'));
+```
+
+- Notice how within `mapStateToProps` we use `getGoods`, a selector created with `createSelector`. This allows us to avoid retrieving the goods again when the tax rate changes.
+
+- "In Redux, whenever an action is called anywhere in the application, all mounted & connected components call their `mapStateToProps` function. This is why Reselect is awesome. It will just return the memoized result if nothing has changed." If selector functions are expensive, memoizing their return values avoids recalling them, hence saving processing time.
+
+- "In the real world, you will most likely need the same certain part of your state object in multiple components. You will also want to pass props to your selector. To do this, you need to create a selector function that can be used on multiple instances of the same component at the same time….all while being properly memoized."
+
+- To reuse a certain memoized selector, we can transform it into a function that returns a memoized selector, as follows:
+
+```javascript
+var getGoods = function () {
+   return createSelector ([function (state) {
+      return state.goods;
+   }], (x) => x);
+}
+
+const mapStateToProps = function (state) {
+   return {
+      goods:   getGoods () (state),
+      goods2:  getGoods () (state),
+      tax:    state.tax,
+   };
+}
+```
+
+Notice how `getGoods` now returns a fresh selector. Also notice how we now invoke `getGoods` without arguments to get the selector, and then we invoke the selector (which is also a function) with the state. This allows for reusing a selector in multiple props & components.
